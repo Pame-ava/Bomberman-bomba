@@ -2,8 +2,17 @@
 #include "Bomba.h"
 
 CBomba::CBomba(int x, int y) {
-	this->x = x;
-	this->y = y;
+	int cellX = (x / ANCHOIMAGEN);
+	int cellY = (y / ALTOIMAGEN);
+
+	
+	this->x = cellX * ANCHOIMAGEN + (ANCHOIMAGEN / 2) - ((ANCHOIMAGEN * 0.7) / 2);
+	this->y = cellY * ALTOIMAGEN + (ALTOIMAGEN / 2) - ((ALTOIMAGEN * 0.7) / 2);
+
+	
+	this->cellX = cellX;
+	this->cellY = cellY;
+
 	estado = EBomba::puesto;
 	tiempoExplosion = 0;
 	indiceX = 0;
@@ -27,7 +36,11 @@ void CBomba::animarExplosion() {
 }
 
 bool CBomba::verificarLugar(int jugadorX, int jugadorY, const CanchaArray& cancha) {
-	if ((cancha[jugadorY / ALTOIMAGEN][jugadorX / ANCHOIMAGEN]->getTipo() == EElementos::piso) || (cancha[jugadorY / ALTOIMAGEN][jugadorX / ANCHOIMAGEN]->getTipo() == EElementos::libre)) {
+	int celda_jugadorX = jugadorX / ANCHOIMAGEN;
+	int celda_jugadorY = jugadorY / ALTOIMAGEN;
+
+	if ((cancha[celda_jugadorY][celda_jugadorX]->getTipo() == EElementos::piso) ||
+		(cancha[celda_jugadorY][celda_jugadorX]->getTipo() == EElementos::libre)) {
 		return true;
 	}
 
@@ -56,43 +69,49 @@ void CBomba::animar() {
 }
 
 void CBomba::dibujarExplosion(Graphics^ g, Bitmap^ bmpExplosion, const CanchaArray& cancha) {
-	const int newAnchoImagen = ANCHOIMAGEN - 10;
-	const int newAltoImagen = ANCHOIMAGEN - 10;
+	const int explosionWidth = ANCHOIMAGEN - 10;
+	const int explosionHeight = ALTOIMAGEN - 10;
 
-	Rectangle centro = Rectangle(x, y, newAnchoImagen, newAltoImagen);
+	int filaActual = y / ALTOIMAGEN;
+	int columnaActual = x / ANCHOIMAGEN;
+
+	Rectangle centro = Rectangle(x, y, explosionWidth, explosionHeight);
 	Rectangle posicionCentro = Rectangle(indiceEX * ANCHOEXPLOSION, indiceEY * ALTOEXPLOSION, ANCHOEXPLOSION, ALTOEXPLOSION);
 	g->DrawImage(bmpExplosion, centro, posicionCentro, GraphicsUnit::Pixel);
 
 	Rectangle izquierdaDerecha = Rectangle(indiceEX * ANCHOEXPLOSION, indiceEY + 2 * ALTOEXPLOSION, ANCHOEXPLOSION, ALTOEXPLOSION);
 	Rectangle arribaAbajo = Rectangle(indiceEX * ANCHOEXPLOSION, indiceEY + 6 * ALTOEXPLOSION, ANCHOEXPLOSION, ALTOEXPLOSION);
 	
-	if (cancha[y / newAltoImagen][(x - newAnchoImagen) / newAnchoImagen]->getTipo() != EElementos::paredes) {
-		Rectangle izquierda = Rectangle(x - newAnchoImagen, y, newAnchoImagen, newAltoImagen);
+	if (columnaActual > 0 && cancha[filaActual][columnaActual - 1]->getTipo() != EElementos::paredes) {
+		Rectangle izquierda = Rectangle(x - ANCHOIMAGEN, y, explosionWidth, explosionHeight);
 		g->DrawImage(bmpExplosion, izquierda, izquierdaDerecha, GraphicsUnit::Pixel);
-		if (cancha[y / newAltoImagen][(x - newAnchoImagen) / newAnchoImagen]->getTipo() == EElementos::rrompible) { 
-				cancha[y / newAltoImagen][(x - newAnchoImagen) / newAnchoImagen]->setTipo(EElementos::libre);
+		if (cancha[filaActual][columnaActual - 1]->getTipo() == EElementos::rrompible) {
+			cancha[filaActual][columnaActual - 1]->setTipo(EElementos::libre);
 		}
 	}
-	if (cancha[y / newAltoImagen][(x + newAnchoImagen) / newAnchoImagen]->getTipo() != EElementos::paredes) {	
-		Rectangle derecha = Rectangle(x + newAnchoImagen, y, newAnchoImagen, newAltoImagen);
+	if (columnaActual < COLUMNAS - 1 && cancha[filaActual][columnaActual + 1]->getTipo() != EElementos::paredes) {
+		Rectangle derecha = Rectangle(x + ANCHOIMAGEN, y, explosionWidth, explosionHeight);
 		g->DrawImage(bmpExplosion, derecha, izquierdaDerecha, GraphicsUnit::Pixel);
-		if (cancha[y / newAltoImagen][(x + newAnchoImagen) / newAnchoImagen]->getTipo() == EElementos::rrompible) { 
-			cancha[y / newAltoImagen][(x + newAnchoImagen) / newAnchoImagen]->setTipo(EElementos::libre);
+		if (cancha[filaActual][columnaActual + 1]->getTipo() == EElementos::rrompible) {
+			cancha[filaActual][columnaActual + 1]->setTipo(EElementos::libre);
 		}
 	}
 	
-	if (cancha[(y - newAltoImagen) / newAltoImagen][x / newAnchoImagen]->getTipo() != EElementos::paredes) {
-		Rectangle arriba = Rectangle(x, y - newAltoImagen, newAnchoImagen, newAltoImagen);
+	if (filaActual > 0 && cancha[filaActual - 1][columnaActual]->getTipo() != EElementos::paredes) {
+		Rectangle arriba = Rectangle(x, y - ALTOIMAGEN, explosionWidth, explosionHeight);
 		g->DrawImage(bmpExplosion, arriba, arribaAbajo, GraphicsUnit::Pixel);
-		if (cancha[(y - newAltoImagen) / newAltoImagen][x / newAnchoImagen]->getTipo() == EElementos::rrompible) {
-			cancha[(y - newAltoImagen) / newAltoImagen][x / newAnchoImagen]->setTipo(EElementos::libre);
+		if (cancha[filaActual - 1][columnaActual]->getTipo() == EElementos::rrompible) {
+			cancha[filaActual - 1][columnaActual]->setTipo(EElementos::libre);
 		}
 	}
-	if (cancha[(y + newAltoImagen) / newAltoImagen][x / newAnchoImagen]->getTipo() != EElementos::paredes) {
-		Rectangle abajo = Rectangle(x, y + newAltoImagen, newAnchoImagen, newAltoImagen);
+
+	// Verificamos y dibujamos la explosion hacia  abajo
+	if (filaActual < FILAS - 1 && cancha[filaActual + 1][columnaActual]->getTipo() != EElementos::paredes) {
+		Rectangle abajo = Rectangle(x, y + ALTOIMAGEN, explosionWidth, explosionHeight);
 		g->DrawImage(bmpExplosion, abajo, arribaAbajo, GraphicsUnit::Pixel);
-		if (cancha[(y + newAltoImagen) / newAltoImagen][x / newAnchoImagen]->getTipo() == EElementos::rrompible) {
-			cancha[(y + newAltoImagen) / newAltoImagen][x / newAnchoImagen]->setTipo(EElementos::libre);
+		if (cancha[filaActual + 1][columnaActual]->getTipo() == EElementos::rrompible) {
+			cancha[filaActual + 1][columnaActual]->setTipo(EElementos::libre);
 		}
 	}
+
 }

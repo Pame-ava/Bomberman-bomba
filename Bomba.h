@@ -25,8 +25,10 @@ class CBomba {
 	EBomba estado;
 
 	// explosion
+	int cellX;
+	int cellY;	
 	int indiceEX;
-	int indiceEY;	
+	int indiceEY;
 public:
 	CBomba(int x, int y);
 
